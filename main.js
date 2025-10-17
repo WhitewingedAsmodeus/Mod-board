@@ -10,12 +10,13 @@
 (function() {
     'use strict';
 
-    // 1. Load UI first
+   
     const uiScript = document.createElement('script');
     uiScript.src = 'https://whitewingedasmodeus.github.io/Mod-board/ui.js';
     uiScript.onload = () => {
         console.log('[Mod Board] UI loaded, loading modules...');
-        const modules = ['rocket.js','drag.js','godmode.js','chatter.js'];
+
+        const modules = ['rocket.js','drag.js','godmode.js','chatter.js','freecam.js','selfdestruct.js','info.js','contrast.js'];
         modules.forEach(name => {
             const mod = document.createElement('script');
             mod.src = `https://whitewingedasmodeus.github.io/Mod-board/modules/${name}`;
@@ -25,5 +26,6 @@
         });
     };
     uiScript.onerror = () => console.error('[Mod Board] UI failed to load');
+
     document.head.appendChild(uiScript);
 })();
