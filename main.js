@@ -10,10 +10,10 @@
 (function() {
   'use strict'
 
-  console.log('%c[Saltfree Mod Board] Loaded base loader', 'color: lime')
+  console.log('%c[Mod Board] Loaded base loader', 'color: lime')
 
   // Load your existing UI script
   const uiScript = document.createElement('script')
-  uiScript.src = 'https://your-github-username.github.io/saltfree-mod-board/ui.js'
+  uiScript.src = 'https://WhitewingedAsmodeus.github.io/Mod-board/ui.js'
   document.head.appendChild(uiScript)
 })()
