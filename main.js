@@ -10,22 +10,28 @@
 (function() {
     'use strict';
 
-    console.log('%c[Mod Board] mod loader is up and at em...', 'color: green');
+    console.log('%c[Mod Board] loader up and at em...', 'color: green');
 
-    // Load ui.js first
+    // Load UI first
     const uiScript = document.createElement('script');
     uiScript.src = 'https://whitewingedasmodeus.github.io/Mod-board/ui.js';
     uiScript.onload = () => {
-        console.log('%c[Mod Board] UI loaded, now loading modules...', 'color: green');
+        console.log('%c[Mod Board] UI loaded, modules coming...', 'color: green');
 
-        // Load modules after UI is ready
-        const modules = ['rocket', 'drag', 'godmode']; // Add more module names here
+        // Load modules in order
+        const modules = ['rocket.js', 'drag.js', 'godmode.js']; // add more here
         modules.forEach(name => {
-            const modScript = document.createElement('script');
-            modScript.src = `https://whitewingedasmodeus.github.io/Mod-board/modules/${name}.js`;
-            document.head.appendChild(modScript);
+            const mod = document.createElement('script');
+            mod.src = `https://whitewingedasmodeus.github.io/Mod-board/modules/${name}`;
+            mod.onload = () => console.log(`[Mod Board] ${name} loaded`);
+            mod.onerror = () => console.error(`[Mod Board] ${name} failed to load`);
+            document.head.appendChild(mod);
         });
     };
+    uiScript.onerror = () => console.error('%c[Mod Board] UI failed to load', 'color: red');
+    document.head.appendChild(uiScript);
+})();
+
     uiScript.onerror = () => console.error('%c[Mod Board] UI failed to load', 'color: red');
 
     document.head.appendChild(uiScript);
