@@ -1,0 +1,285 @@
+
+(function() {
+    'use strict';
+
+    const style=document.createElement('style')
+    style.innerHTML=`
+        #mod_board, #mod_board button { font-family:sans-serif; user-select:none; image-rendering:pixelated; }
+        #mod_board button:focus { outline:none; }
+    `
+    document.head.appendChild(style)
+
+    const wait=setInterval(()=>{
+        if(typeof ig!=='undefined' && ig.game && ig.game.O4269){ clearInterval(wait); initBoard(); }
+    },100)
+
+    function initBoard(){
+        const board=document.createElement('div')
+        board.id='mod_board'
+        board.style.cssText=`
+            position:fixed; top:20px; right:20px; width:160px; padding:5px;
+            background:rgba(191,188,184,0.85);
+            border-top:2px solid #efeeec;
+            border-left:2px solid #efeeec;
+            border-bottom:2px solid #6f6d69;
+            border-right:2px solid #6f6d69;
+            font-size:12px; color:#000;
+            z-index:9999; cursor:grab;
+            box-sizing:border-box;
+        `
+        document.body.appendChild(board)
+
+        let dragging=false, ox, oy
+        board.onmousedown=e=>{ dragging=true; ox=e.clientX-board.offsetLeft; oy=e.clientY-board.offsetTop; board.style.cursor='grabbing'; }
+        document.onmouseup=()=>{ dragging=false; board.style.cursor='grab'; }
+        document.onmousemove=e=>{ if(dragging){ board.style.left=e.clientX-ox+'px'; board.style.top=e.clientY-oy+'px'; } }
+
+        let minimized=false
+        const contentDiv=document.createElement('div')
+        contentDiv.style.marginTop='10px'
+        board.appendChild(contentDiv)
+
+        const title=document.createElement('div')
+        title.textContent='MOD BOARD'
+        title.style.cssText='text-align:center; font-weight:bold; margin-bottom:5px;'
+        contentDiv.appendChild(title)
+
+        function createButton(text,isToggle=false){
+            const btn=document.createElement('button')
+            btn.textContent=text
+            btn.dataset.toggled='false'
+            btn.style.cssText=`
+                width:100%; padding:2px 0; margin-top:3px;
+                background:rgba(198,195,191,0.85);
+                border-top:2px solid #efeeec;
+                border-left:2px solid #efeeec;
+                border-bottom:2px solid #6f6d69;
+                border-right:2px solid #6f6d69;
+                cursor:pointer;
+            `
+            contentDiv.appendChild(btn)
+            btn.addEventListener('click',()=>{
+                if(!isToggle){
+                    btn.style.borderTop='2px solid #6f6d69'
+                    btn.style.borderLeft='2px solid #6f6d69'
+                    btn.style.borderBottom='2px solid #efeeec'
+                    btn.style.borderRight='2px solid #efeeec'
+                    btn.style.background='rgba(170,167,163,0.85)'
+                    setTimeout(()=>{
+                        btn.style.borderTop='#efeeec 2px solid'
+                        btn.style.borderLeft='#efeeec 2px solid'
+                        btn.style.borderBottom='#6f6d69 2px solid'
+                        btn.style.borderRight='#6f6d69 2px solid'
+                        btn.style.background='rgba(198,195,191,0.85)'
+                    },200)
+                }else{
+                    const toggled=btn.dataset.toggled==='true'
+                    if(toggled){
+                        btn.style.borderTop='#efeeec 2px solid'
+                        btn.style.borderLeft='#efeeec 2px solid'
+                        btn.style.borderBottom='#6f6d69 2px solid'
+                        btn.style.borderRight='#6f6d69 2px solid'
+                        btn.style.background='rgba(198,195,191,0.85)'
+                        btn.dataset.toggled='false'
+                    }else{
+                        btn.style.borderTop='#6f6d69 2px solid'
+                        btn.style.borderLeft='#6f6d69 2px solid'
+                        btn.style.borderBottom='#efeeec 2px solid'
+                        btn.style.borderRight='#efeeec 2px solid'
+                        btn.style.background='rgba(170,167,163,0.85)'
+                        btn.dataset.toggled='true'
+                    }
+                }
+            })
+            return btn
+        }
+
+        const rocketBtn=createButton("Rocket")
+        rocketBtn.onclick=()=>{
+            const player=ig.game.O4269
+            if(player && typeof player.vel!=='undefined') player.vel.y=-1100
+            rocketBtn.style.background='rgba(163,161,157,0.85)'
+            setTimeout(()=>rocketBtn.style.background='rgba(198,195,191,0.85)',120)
+        }
+
+        const dragBtn=createButton("Drag Player (Ctrl+Y)",true)
+        let dragMode=false, godEnabled=false, player, mouseX=0, mouseY=0, originalKill
+        const overlay=document.createElement('div')
+        overlay.style.cssText='position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9998; pointer-events:none; cursor:crosshair;'
+        document.body.appendChild(overlay)
+
+        function getMousePos(e){ const rect=ig.system.canvas.getBoundingClientRect(); const scale=ig.system.scale||1; return { x:(e.clientX-rect.left)/scale+ig.game.screen.x, y:(e.clientY-rect.top)/scale+ig.game.screen.y }; }
+
+        document.addEventListener('mousemove', e=>{ const pos=getMousePos(e); mouseX=pos.x; mouseY=pos.y; })
+
+        function startLoop(){ function loop(){ if(dragMode && player){ const tx=mouseX-player.size.x/2, ty=mouseY-player.size.y/2; player.pos.x+=(tx-player.pos.x)*0.2; player.pos.y+=(ty-player.pos.y)*0.2; player.vel.x=0; player.vel.y=0; } requestAnimationFrame(loop); } loop(); }
+
+        function initDrag(){ if(window.ig && ig.game && ig.game.O4269){ player=ig.game.O4269; originalKill=player.kill.bind(player); startLoop(); } else setTimeout(initDrag,100); }
+        initDrag()
+
+        function updateKill(){ if(!player) return; player.kill=(dragMode || godEnabled)?()=>{}:originalKill }
+        dragBtn.onclick=()=>{ dragMode = (dragBtn.dataset.toggled==='true'); overlay.style.pointerEvents=dragMode?'auto':'none'; updateKill() }
+        document.addEventListener('keydown', e=>{ if(e.ctrlKey && e.key.toLowerCase()==='y'){ e.preventDefault(); dragBtn.click() } })
+
+        const godBtn=createButton("Godmode",true)
+        godBtn.onclick=()=>{ godEnabled = (godBtn.dataset.toggled==='true'); updateKill() }
+
+        let highContrast = localStorage.getItem('contrastsettings')==='true'
+        const applyContrast = on => { const filter = on?'contrast(300%) brightness(110%)':'contrast(100%) brightness(100%)'; const canvas=document.querySelector('canvas'); if(canvas) canvas.style.filter=filter; board.style.filter=filter; }
+        applyContrast(highContrast)
+        const contrastBtn=createButton("High Contrast",true)
+        if(highContrast){ contrastBtn.dataset.toggled='true'; contrastBtn.style.borderTop='#6f6d69 2px solid'; contrastBtn.style.borderLeft='#6f6d69 2px solid'; contrastBtn.style.borderBottom='#efeeec 2px solid'; contrastBtn.style.borderRight='#efeeec 2px solid'; contrastBtn.style.background='rgba(170,167,163,0.85)'; }
+        contrastBtn.onclick=()=>{ highContrast=!highContrast; localStorage.setItem('contrastsettings',highContrast); applyContrast(highContrast); }
+
+        let chatterEnabled=false
+        const chatterDiv=document.createElement("div")
+        chatterDiv.style.cssText="margin-top:5px; padding:5px; border:1px solid #6f6d69; background:rgba(198,195,191,0.85); display:none; box-sizing:border-box;"
+        contentDiv.appendChild(chatterDiv)
+
+        const textInput=document.createElement("input")
+        textInput.type="text"; textInput.placeholder="Enter text..."
+        textInput.style.cssText="width:100%; margin-bottom:3px; font-size:11px; box-sizing:border-box;"
+        chatterDiv.appendChild(textInput)
+
+        const speedLabel=document.createElement("label")
+        speedLabel.textContent="Speed"; speedLabel.style.cssText="font-size:11px;"
+        chatterDiv.appendChild(speedLabel)
+
+        const speedSlider=document.createElement("input")
+        speedSlider.type="range"; speedSlider.min=20; speedSlider.max=100; speedSlider.value=50
+        speedSlider.style.cssText="width:100%; margin-bottom:3px;"
+        chatterDiv.appendChild(speedSlider)
+
+        const runBtn=document.createElement("button")
+        runBtn.textContent="Run"
+        runBtn.style.cssText="width:100%; padding:2px 0; background:rgba(198,195,191,0.85); border-top:2px solid #efeeec; border-left:2px solid #efeeec; border-bottom:2px solid #6f6d69; border-right:2px solid #6f6d69; cursor:pointer;"
+        chatterDiv.appendChild(runBtn)
+
+        const chatterBtn=createButton("Chatter",true)
+        chatterBtn.onclick=()=>{ chatterEnabled=!chatterEnabled; chatterDiv.style.display=chatterEnabled?"block":"none"; chatterBtn.style.background=chatterEnabled?"rgba(163,161,157,0.85)":"rgba(198,195,191,0.85)"; }
+
+        function slowType(fullText, delay){ let i=0,totalTextLength=0; const type=setInterval(()=>{ const char=fullText.charAt(i); ig.game.O884.say("_s"+char); i++; totalTextLength++; if((totalTextLength>20 && char===" ")||(totalTextLength>20 && char==="~")){ ig.game.O884.say("_nl"); totalTextLength=0; } if(i>=fullText.length) clearInterval(type); },delay); }
+        runBtn.onclick=()=>{ const text=textInput.value; const speed=120-parseInt(speedSlider.value); if(text.length>0) slowType(text,speed); }
+
+        const infoBtn=createButton("Info",true)
+        infoBtn.onclick=()=>{
+            let existing=document.querySelector('#infoUI')
+            if(existing){ existing.remove(); return }
+
+            const info=document.createElement('div')
+            info.id='infoUI'
+            info.style.cssText='position:fixed; bottom:20px; left:20px; width:220px; padding:8px; background:rgba(191,188,184,0.85); border-top:2px solid #efeeec; border-left:2px solid #efeeec; border-bottom:2px solid #6f6d69; border-right:2px solid #6f6d69; font-family:sans-serif; font-size:11px; color:#000; z-index:9999; box-sizing:border-box; border-radius:3px;'
+
+            const textContainer=document.createElement('div')
+            textContainer.innerHTML=`<b>Skyelar</b><br><br>
+            I love trying to code, and I find other people's art and code amazing.<br>
+            I aspire to be like them.<br><br>
+            Discord: <b>themilkdirector</b><br>
+            Gmail: <b>skyelarkessner@gmail.com</b><br><br>
+            Let me know if there's any bugs or ideas you'd want to add or want me to add!
+            <b>ctrl+y to fly and ill be updating the chatter thing soon </b><br>`
+            info.appendChild(textContainer)
+
+            const closeX=document.createElement('div')
+            closeX.textContent='✕'
+            closeX.style.cssText='position:absolute; top:2px; right:2px; cursor:pointer; font-weight:bold; color:#000; user-select:none;'
+            closeX.onclick=()=>{ info.remove(); }
+            info.appendChild(closeX)
+
+            document.body.appendChild(info)
+        }
+
+        const minimize=document.createElement('div')
+        minimize.innerHTML=`<div style="width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:5px solid #000;margin:0 auto;"></div>`
+        minimize.style.cssText='position:absolute; top:4px; right:4px; width:9px; height:9px; background:rgba(191,188,184,0.85); border-top:2px solid #efeeec; border-left:2px solid #efeeec; border-bottom:2px solid #6f6d69; border-right:2px solid #6f6d69; cursor:pointer; display:flex; align-items:center; justify-content:center;'
+        board.appendChild(minimize)
+        minimize.onclick=()=>{ minimized=!minimized; contentDiv.style.display=minimized?'none':'block'; minimize.firstElementChild.style.borderTop=minimized?'none':'5px solid #000'; minimize.firstElementChild.style.borderBottom=minimized?'5px solid #000':'none'; }
+
+        addSelfDestruct(board)
+        const freeBtn=createButton("Freecam (Ctrl+E)",true)
+        freeBtn.dataset.toggled='false'
+        freeBtn.style.background='rgba(198,195,191,0.85)'
+        contentDiv.appendChild(freeBtn)
+        addFreecam(freeBtn)
+    }
+
+    function addSelfDestruct(board){
+        const btn=document.createElement("button")
+        btn.textContent="Shitty Self Destruct"
+        btn.style.cssText="width:100%; padding:2px 0; margin-top:3px; background:rgba(198,195,191,0.85); border-top:2px solid #efeeec; border-left:2px solid #efeeec; border-bottom:2px solid #6f6d69; border-right:2px solid #6f6d69; cursor:pointer; font-weight:bold; color:#a00;"
+        btn.onclick=()=>{
+            const player=ig.game.O4269
+            const explosionGif='https://i.pinimg.com/originals/43/7e/60/437e60c3fe83d636e7f514fac5a6e39e.gif'
+            const rect=board.getBoundingClientRect()
+            const count=4
+            const explosions=[]
+            for(let i=0;i<count;i++){
+                const exp=document.createElement('img')
+                exp.src=explosionGif
+                exp.style.cssText=`position:fixed; left:${rect.left+(Math.random()*rect.width)-50}px; top:${rect.top+(Math.random()*rect.height)-50}px; width:${rect.width/1.2}px; height:${rect.height/1.2}px; z-index:9999; pointer-events:none; transform:scale(${1+Math.random()*0.5}); opacity:0; transition:opacity 0.1s;`
+                document.body.appendChild(exp)
+                explosions.push(exp)
+                setTimeout(()=>exp.style.opacity=1,i*150)
+            }
+            const tracker=setInterval(()=>{
+                const rect=board.getBoundingClientRect()
+                explosions.forEach(exp=>{ exp.style.left=`${rect.left+(Math.random()*rect.width)-50}px`; exp.style.top=`${rect.top+(Math.random()*rect.height)-50}px`; })
+            },100)
+            setTimeout(()=>{
+                board.style.opacity=0
+            },2300)
+            setTimeout(()=>{
+                clearInterval(tracker)
+                explosions.forEach(e=>e.remove())
+                board.remove()
+                console.log("shitty self destruct avtivated... DUDE WHAT THE FUCK WHY DID U DO THAT, STUPID BITCH GO TO HELL")
+                console.log("also id reccomend closing out info first next time you do that....          ...stupid bitch.")
+                if(player && typeof player.kill==='function') player.kill()
+            },2800)
+        }
+        board.appendChild(btn)
+    }
+
+    function addFreecam(freeBtn){
+        const cam=ig.game.camera
+        const oldUpdate=cam.update.bind(cam)
+        const origOffset={ x: cam.offset.x, y: cam.offset.y }
+        let followMouse=false
+        const reachX=2, reachY=3
+
+        freeBtn.onclick=()=>{
+            followMouse = (freeBtn.dataset.toggled==='true')
+            if(followMouse){
+                ig.game.viewRange=(ig.game.viewRange||9)*2
+                ig.game.chunkRadius=(ig.game.chunkRadius||5)*2
+                console.log('Freecam enabled')
+            }else{
+                cam.offset.x=origOffset.x
+                cam.offset.y=origOffset.y
+                ig.game.viewRange=ig.game.viewRange||9
+                ig.game.chunkRadius=ig.game.chunkRadius||5
+                console.log('Freecam disabled')
+            }
+        }
+
+        document.addEventListener('keydown',(e)=>{
+            if(e.ctrlKey && e.code==='KeyE'){
+                e.preventDefault()
+                freeBtn.click()
+            }
+        })
+
+        cam.update=function(){
+            oldUpdate()
+            if(followMouse || freeBtn.dataset.toggled==='true'){
+                const mx=ig.input.mouse.x, my=ig.input.mouse.y
+                const cx=ig.system.width/2, cy=ig.system.height/2
+                cam.offset.x=origOffset.x+((mx-cx)/ig.system.scale)*reachX
+                cam.offset.y=origOffset.y+((my-cy)/ig.system.scale)*reachY
+            }
+        }
+    }
+
+})()
+
+
