@@ -1,0 +1,58 @@
+#cinemaBoard {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 180px;
+    padding: 5px;
+    background: rgba(191,188,184,0.85);
+    border-top: 2px solid #efeeec;
+    border-left: 2px solid #efeeec;
+    border-bottom: 2px solid #6f6d69;
+    border-right: 2px solid #6f6d69;
+    font-family: sans-serif;
+    font-size: 12px;
+    color: #000;
+    z-index: 9999;
+    cursor: grab;
+    box-sizing: border-box;
+}
+
+#cinemaBoard div.titleBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+#cinemaBoard div.titleBar div.title {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+#cinemaBoard div.titleBar div.closeBtn {
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none;
+}
+
+#cinemaBoard button.toggleBtn {
+    width: 100%;
+    padding: 2px 0;
+    background: rgba(198,195,191,0.85);
+    border-top: 2px solid #efeeec;   /* normal OFF state */
+    border-left: 2px solid #efeeec;  /* normal OFF state */
+    border-bottom: 2px solid #6f6d69;/* normal OFF state */
+    border-right: 2px solid #6f6d69; /* normal OFF state */
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Example CSS for Cinema ON (pressed) */
+#cinemaBoard button.toggleBtn.cinemaOn {
+    border-top: 2px solid #6f6d69;
+    border-left: 2px solid #6f6d69;
+    border-bottom: 2px solid #efeeec;
+    border-right: 2px solid #efeeec;
+}
