@@ -1,4 +1,4 @@
-//heih contrast being an inside joke. so stfu
+//heih contrast being an inside joke. so stfu bitch
 (function() {
     'use strict';
 
