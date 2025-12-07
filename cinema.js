@@ -25,10 +25,10 @@
         `;
         document.body.appendChild(board);
 
-        let dragging = false, ox, oy;
-        board.onmousedown = e => { dragging = true; ox = e.clientX - board.offsetLeft; oy = e.clientY - board.offsetTop; board.style.cursor = 'grabbing'; };
-        document.onmouseup = () => { dragging = false; board.style.cursor = 'grab'; };
-        document.onmousemove = e => { if(dragging){ board.style.left = e.clientX - ox + 'px'; board.style.top = e.clientY - oy + 'px'; } };
+        // Remove the old drag implementation and use the global DragManager
+        if(window.DragManager) {
+            window.DragManager.makeDraggable('cinemaBoard');
+        }
 
         const titleBar = document.createElement('div');
         titleBar.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;';
