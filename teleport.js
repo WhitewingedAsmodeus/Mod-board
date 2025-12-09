@@ -35,6 +35,7 @@
         title.style.cssText = 'text-align:center; font-weight:bold; margin-bottom:5px;';
         board.appendChild(title);
 
+       
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = 'x,y,p,a';
@@ -44,6 +45,7 @@
         `;
         board.appendChild(input);
 
+     
         const btn = document.createElement('button');
         btn.textContent = 'Teleport';
         btn.style.cssText = `
@@ -57,7 +59,61 @@
         `;
         board.appendChild(btn);
 
+    //button
+        const resetCalibBtn = document.createElement('button');
+        resetCalibBtn.textContent = 'Set 0,0 Here';
+        resetCalibBtn.style.cssText = `
+            width:100%; padding:2px 0; margin-top:3px;
+            background:rgba(198,195,191,0.85);
+            border-top:2px solid #efeeec;
+            border-left:2px solid #efeeec;
+            border-bottom:2px solid #6f6d69;
+            border-right:2px solid #6f6d69;
+            cursor:pointer;
+        `;
+        board.appendChild(resetCalibBtn);
+
+     
+        const currentWorld = window.location.pathname;
+
+ 
+        let calibrationData = {};
+        try {
+            const stored = localStorage.getItem('teleportCalibration');
+            if (stored) {
+                calibrationData = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error("Failed to load teleport calibration ", e);
+        }
+
+        
+        const getReferencePoint = () => {
+            return calibrationData[currentWorld] || { refPixelX: 0, refPixelY: 0 };
+        };
+
+        // ur gay
+        const setReferencePoint = () => {
+            const player = ig.game.O4269;
+            if (!player) {
+                console.error('Player object not found to set reference point.');
+                return;
+            }
+
+            const currentPlayerPixelX = player.pos.x;
+            const currentPlayerPixelY = player.pos.y;
+
+            calibrationData[currentWorld] = { refPixelX: currentPlayerPixelX, refPixelY: currentPlayerPixelY };
+            try {
+                localStorage.setItem('teleportCalibration', JSON.stringify(calibrationData));
+                console.log(`Reference point (0,0) set for ${currentWorld} at player's current pixel position (${currentPlayerPixelX}, ${currentPlayerPixelY})`);
+            } catch (e) {
+                console.error("Failed to save teleport reference point ", e);
+            }
+        };
+
         btn.onclick = teleport;
+        resetCalibBtn.onclick = setReferencePoint;
         input.addEventListener('keydown', e => { if(e.key === 'Enter') teleport(); });
 
         function teleport() {
@@ -66,18 +122,22 @@
             const parts = val.split(',').map(s => s.trim());
             const bx = parseFloat(parts[0]);
             const by = parseFloat(parts[1]);
-            const p = parts[2] ? parseInt(parts[2]) : 0;
-            const a = parts[3] || '0';
+          
 
-            if(isNaN(bx) || isNaN(by)) return console.error('Invalid coordinates!');
+            if(isNaN(bx) || isNaN(by)) {
+                console.error('Invalid coordinates! Please enter numbers for x and y.');
+                return;
+            }
 
-            const px = bx * 19;
-            const py = by * 19;
+            const { refPixelX, refPixelY } = getReferencePoint();
+          //gay
+            const px = (bx * 19) + refPixelX;
+            const py = (by * 19) + refPixelY;
 
             ig.game.O4269.pos.x = px;
             ig.game.O4269.pos.y = py;
 
-            console.log(`Teleported to block (${bx}, ${by}, ${p}, ${a}) → pixels (${px}, ${py})`);
+            console.log(`Teleported to block (${bx}, ${by}) in ${currentWorld} → pixels (${px}, ${py}) using reference point (${refPixelX}, ${refPixelY})`);
         }
     }
 })();
